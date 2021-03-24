@@ -26,6 +26,17 @@ class ARIMARegressor(Estimator):
 
     def __init__(self, date_column=None, trend='n', p=1, d=0, q=0,
                  random_seed=0, **kwargs):
+        """
+        Arguments:
+            date_column (str): Specifies the name of the column in X that provides the datetime objects. Defaults to None.
+            trend (str): Controls the deterministic trend. Options are ['n', 'c', 't', 'ct'] where 'c' is a constant term,
+                't' indicates a linear trend, and 'ct' is both. Can also be an iterable when defining a polynomial, such
+                as [1, 1, 0, 1].
+            p (int or list(int)): Autoregressive order.
+            d (int): Differencing degree.
+            q (int or list(int)): Moving Average order.
+        """
+
         order = (p, d, q)
         parameters = {'order': order,
                       'trend': trend}
@@ -37,7 +48,9 @@ class ARIMARegressor(Estimator):
 
         arima = import_or_raise("statsmodels.tsa.arima.model", error_msg=p_error_msg)
         try:
-            arima.ARIMA(endog=np.zeros(p + d + q + 1), **parameters)
+            sum_p = sum(p) if isinstance(p, list) else p
+            sum_q = sum(q) if isinstance(q, list) else q
+            arima.ARIMA(endog=np.zeros(sum_p + d + sum_q + 1), **parameters)
         except TypeError:
             raise TypeError("Unable to instantiate ARIMA due to an unexpected argument")
         parameters.update({'p': p,
@@ -79,7 +92,7 @@ class ARIMARegressor(Estimator):
 
         if date_col is None:
             msg = "ARIMA regressor requires input data X to have a datetime column specified by the 'date_column' parameter. " \
-                  "If not it will look for the datetime column in the index of X."
+                  "If not it will look for the datetime column in the index of X or y."
             raise ValueError(msg)
         return date_col
 
@@ -109,8 +122,7 @@ class ARIMARegressor(Estimator):
         else:
             arima_with_data = arima.ARIMA(endog=y, dates=dates, **new_params)
 
-        component_obj = arima_with_data
-        self._component_obj = component_obj.fit()
+        self._component_obj = arima_with_data.fit()
         return self
 
     def predict(self, X, y=None):
