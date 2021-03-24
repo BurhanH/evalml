@@ -38,7 +38,7 @@ def test_fit_predict_ts_with_X_and_y_index(ts_data):
     clf_ = m_clf.fit(X=X, y=y)
     y_pred = clf_.predict(X=X)
 
-    assert (y_pred == y_pred_a).all()
+    assert (y_pred.to_series() == y_pred_a).all()
 
 
 def test_fit_predict_ts_with_X_not_y_index(ts_data):
@@ -57,7 +57,7 @@ def test_fit_predict_ts_with_X_not_y_index(ts_data):
     clf_ = m_clf.fit(X=X, y=y)
     y_pred = clf_.predict(X=X)
 
-    assert (y_pred == y_pred_a).all()
+    assert (y_pred.to_series() == y_pred_a).all()
 
 
 def test_fit_predict_ts_with_y_not_X_index_with_iterable_p_and_q(ts_data):
@@ -75,7 +75,7 @@ def test_fit_predict_ts_with_y_not_X_index_with_iterable_p_and_q(ts_data):
     clf_ = m_clf.fit(X=X_no_ind, y=y)
     y_pred = clf_.predict(X=X, y=y)
 
-    assert (y_pred == y_pred_a).all()
+    assert (y_pred.to_series() == y_pred_a).all()
 
 
 def test_predict_ts_without_X(ts_data):
@@ -89,7 +89,7 @@ def test_predict_ts_without_X(ts_data):
     clf_ = m_clf.fit(X=X, y=y)
     y_pred = clf_.predict(y=y)
 
-    assert (y_pred == y_pred_a).all()
+    assert (y_pred.to_series() == y_pred_a).all()
 
 
 def test_fit_ts_with_not_X_not_y_index(ts_data):
@@ -134,7 +134,7 @@ def test_fit_predict_ts_no_X(ts_data):
     clf_ = m_clf.fit(X=None, y=y)
     y_pred = clf_.predict(X=X, y=y)
 
-    assert (y_pred == y_pred_a).all()
+    assert (y_pred.to_series() == y_pred_a).all()
 
 
 def test_fit_predict_date_col_named(ts_data):
@@ -150,4 +150,4 @@ def test_fit_predict_date_col_named(ts_data):
     clf_ = m_clf.fit(X=X, y=y)
     y_pred = clf_.predict(X=X, y=y)
 
-    assert (y_pred == y_pred_a).all()
+    assert (y_pred.to_series() == y_pred_a).all()

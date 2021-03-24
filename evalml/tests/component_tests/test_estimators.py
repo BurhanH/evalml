@@ -100,8 +100,9 @@ def test_all_estimators_check_fit_input_type_regression(data_type, X_y_regressio
         component.predict(X)
 
 
-def test_estimator_predict_output_type(X_y_binary, helper_functions):
+def test_estimator_predict_output_type(X_y_binary, ts_data, helper_functions):
     X_np, y_np = X_y_binary
+    X_ts, y_ts = ts_data
     assert isinstance(X_np, np.ndarray)
     assert isinstance(y_np, np.ndarray)
     y_list = list(y_np)
@@ -116,8 +117,6 @@ def test_estimator_predict_output_type(X_y_binary, helper_functions):
                        (X_df_with_col_names, y_series_with_name, X_df_with_col_names.columns, y_series_with_name.unique())]
 
     for component_class in _all_estimators_used_in_search():
-        if component_class.__name__ == 'ARIMARegressor':
-            continue
         for X, y, X_cols_expected, y_cols_expected in datatype_combos:
             print('Checking output of predict for estimator "{}" on X type {} cols {}, y type {} name {}'
                   .format(component_class.name, type(X),

@@ -5,7 +5,7 @@ from skopt.space import Integer
 from evalml.model_family import ModelFamily
 from evalml.pipelines.components.estimators import Estimator
 from evalml.problem_types import ProblemTypes
-from evalml.utils import import_or_raise
+from evalml.utils import import_or_raise, infer_feature_types
 
 
 class ARIMARegressor(Estimator):
@@ -136,7 +136,7 @@ class ARIMARegressor(Estimator):
             y_pred = self._component_obj.predict(params=params, start=start, end=end, exog=X)
         else:
             y_pred = self._component_obj.predict(params=params, start=start, end=end)
-        return y_pred
+        return infer_feature_types(y_pred)
 
     @property
     def feature_importance(self):
