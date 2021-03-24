@@ -374,6 +374,7 @@ def test_classification_data_drop():
     assert len(X2) == 400
     assert y2.value_counts().values[0] == 100
 
+
 def test_classification_balanced_multirun():
     X = pd.DataFrame({"a": [i for i in range(1000)]})
     y = pd.Series([i % 3 for i in range(1000)])

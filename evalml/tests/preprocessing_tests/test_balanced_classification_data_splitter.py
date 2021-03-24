@@ -266,14 +266,13 @@ def test_data_splitter_multirun(splitter_cls, X_y_binary, X_y_multi):
     splitter = splitter_cls(random_seed=13117)
     indices1 = [(train_indices, test_indices) for train_indices, test_indices in list(splitter.split(X, y))]
     indices2 = [(train_indices, test_indices) for train_indices, test_indices in list(splitter.split(X, y))]
-    import pdb; pdb.set_trace()
     for i in range(len(indices1)):
         pd.testing.assert_series_equal(pd.Series(indices1[i][0]), pd.Series(indices2[i][0]))
         pd.testing.assert_series_equal(pd.Series(indices1[i][1]), pd.Series(indices2[i][1]))
 
     splitter = splitter_cls(random_seed=13117)
-    indices3 = [(train_indices, test_indices) for train_indices, test_indices in enumerate(splitter.split(X, y))]
-    indices4 = [(train_indices, test_indices) for train_indices, test_indices in enumerate(splitter.split(X, y))]
+    indices3 = [(train_indices, test_indices) for train_indices, test_indices in list(splitter.split(X, y))]
+    indices4 = [(train_indices, test_indices) for train_indices, test_indices in list(splitter.split(X, y))]
     for i in range(len(indices1)):
         pd.testing.assert_series_equal(pd.Series(indices1[i][0]), pd.Series(indices3[i][0]))
         pd.testing.assert_series_equal(pd.Series(indices1[i][1]), pd.Series(indices4[i][1]))
