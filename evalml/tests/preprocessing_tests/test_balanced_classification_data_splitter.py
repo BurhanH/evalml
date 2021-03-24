@@ -37,15 +37,15 @@ def test_data_splitter_nsplits(splitter):
 
 
 @pytest.mark.parametrize("value", [np.nan, "hello"])
-@pytest.mark.parametrize("splitter",
+@pytest.mark.parametrize("splitter_cls",
                          [BalancedClassificationDataCVSplit,
                           BalancedClassificationDataTVSplit])
-def test_data_splitter_no_error(splitter, value, X_y_binary):
+def test_data_splitter_no_error(splitter_cls, value, X_y_binary):
     X, y = X_y_binary
     X = pd.DataFrame(X)
     y = pd.Series(y)
     X.iloc[0, :] = value
-    data_split = splitter()
+    data_split = splitter_cls()
     # handles both TV and CV iterations
     next(data_split.split(X, y))
     data_split.transform_sample(X, y)
@@ -59,7 +59,7 @@ def test_data_splitter_no_error(splitter, value, X_y_binary):
                               StratifiedKFold(shuffle=True, n_splits=3, random_state=0))
                          ])
 @pytest.mark.parametrize('data_type', ['np', 'pd', 'ww'])
-def test_data_splitters_data_type(data_type, balanced_splitter, data_splitter, make_data_type, X_y_binary):
+def test_data_splitter_data_type(data_type, balanced_splitter, data_splitter, make_data_type, X_y_binary):
     X, y = X_y_binary
     # make imbalanced
     X_extended = np.append(X, X, 0)
@@ -93,7 +93,7 @@ def test_data_splitters_data_type(data_type, balanced_splitter, data_splitter, m
                               StratifiedKFold(shuffle=True, n_splits=3, random_state=0))
                          ])
 @pytest.mark.parametrize('dataset', ['binary', 'multiclass'])
-def test_data_splitters_dataset(dataset, balanced_splitter, data_splitter, make_data_type, X_y_binary, X_y_multi):
+def test_data_splitter_dataset(dataset, balanced_splitter, data_splitter, make_data_type, X_y_binary, X_y_multi):
     if dataset == 'binary':
         X, y = X_y_binary
     else:
@@ -124,10 +124,10 @@ def test_data_splitters_dataset(dataset, balanced_splitter, data_splitter, make_
     assert isinstance(final_indices, list)
 
 
-@pytest.mark.parametrize("splitters", [BalancedClassificationDataTVSplit, BalancedClassificationDataCVSplit])
-def test_data_splitters_balanced(splitters, X_y_binary, X_y_multi):
+@pytest.mark.parametrize("splitter_cls", [BalancedClassificationDataTVSplit, BalancedClassificationDataCVSplit])
+def test_data_splitter_balanced(splitter_cls, X_y_binary, X_y_multi):
     X, y = X_y_binary
-    splitter = splitters()
+    splitter = splitter_cls()
 
     for i, (train_indices, test_indices) in enumerate(splitter.split(X, y)):
         assert len(train_indices) + len(test_indices) == len(X)
@@ -137,12 +137,12 @@ def test_data_splitters_balanced(splitters, X_y_binary, X_y_multi):
         assert len(train_indices) + len(test_indices) == len(X)
 
 
-@pytest.mark.parametrize("splitters", [BalancedClassificationDataTVSplit, BalancedClassificationDataCVSplit])
-def test_data_splitters_severe_imbalanced(splitters, X_y_binary, X_y_multi):
+@pytest.mark.parametrize("splitter_cls", [BalancedClassificationDataTVSplit, BalancedClassificationDataCVSplit])
+def test_data_splitter_severe_imbalanced(splitter_cls, X_y_binary, X_y_multi):
     X, y = X_y_binary
     y[0] = 0
     y[1:] = 1
-    splitter = splitters()
+    splitter = splitter_cls()
 
     for i, (train_indices, test_indices) in enumerate(splitter.split(X, y)):
         assert len(train_indices) + len(test_indices) == len(X)
@@ -155,7 +155,7 @@ def test_data_splitters_severe_imbalanced(splitters, X_y_binary, X_y_multi):
         assert len(train_indices) + len(test_indices) == len(X)
 
 
-def test_data_splitters_imbalanced_binary_tv():
+def test_data_splitter_imbalanced_binary_tv():
     X = pd.DataFrame({"a": [i for i in range(1000)],
                       "b": [i % 5 for i in range(1000)]})
     # make y a 9:1 class ratio
@@ -173,7 +173,7 @@ def test_data_splitters_imbalanced_binary_tv():
         assert max(y_train_counts.values) == 0.8
 
 
-def test_data_splitters_imbalanced_multiclass_tv():
+def test_data_splitter_imbalanced_multiclass_tv():
     X = pd.DataFrame({"a": [i for i in range(1500)],
                       "b": [i % 5 for i in range(1500)]})
     # make y a 8:1:1 class ratio
@@ -192,7 +192,7 @@ def test_data_splitters_imbalanced_multiclass_tv():
         assert max(y_train_counts.values) > 6 / 10
 
 
-def test_data_splitters_imbalanced_binary_cv():
+def test_data_splitter_imbalanced_binary_cv():
     X = pd.DataFrame({"a": [i for i in range(1200)],
                       "b": [i % 5 for i in range(1200)]})
     # make y a 9:1 class ratio
@@ -212,7 +212,7 @@ def test_data_splitters_imbalanced_binary_cv():
         assert max(y_test_counts.values) == 0.9
 
 
-def test_data_splitters_imbalanced_multiclass_cv():
+def test_data_splitter_imbalanced_multiclass_cv():
     X = pd.DataFrame({"a": [i for i in range(1200)],
                       "b": [i % 5 for i in range(1200)]})
     # make y a 8:1:1 class ratio
@@ -230,7 +230,7 @@ def test_data_splitters_imbalanced_multiclass_cv():
         assert max(y_test_counts.values) == 0.8
 
 
-def test_data_splitters_severe_imbalanced_binary_cv():
+def test_data_splitter_severe_imbalanced_binary_cv():
     X = pd.DataFrame({"a": [i for i in range(1200)],
                       "b": [i % 5 for i in range(1200)]})
     y = pd.Series([0] * 60 + [1] * 1140)
@@ -258,3 +258,22 @@ def test_data_splitters_severe_imbalanced_binary_cv():
         y_test = y.iloc[test_indices]
         y_test_counts = y_test.value_counts(normalize=True)
         assert max(y_test_counts.values) == 1140 / 1200
+
+
+@pytest.mark.parametrize("splitter_cls", [BalancedClassificationDataTVSplit, BalancedClassificationDataCVSplit])
+def test_data_splitter_multirun(splitter_cls, X_y_binary, X_y_multi):
+    X, y = X_y_binary
+    splitter = splitter_cls(random_seed=13117)
+    indices1 = [(train_indices, test_indices) for train_indices, test_indices in list(splitter.split(X, y))]
+    indices2 = [(train_indices, test_indices) for train_indices, test_indices in list(splitter.split(X, y))]
+    import pdb; pdb.set_trace()
+    for i in range(len(indices1)):
+        pd.testing.assert_series_equal(pd.Series(indices1[i][0]), pd.Series(indices2[i][0]))
+        pd.testing.assert_series_equal(pd.Series(indices1[i][1]), pd.Series(indices2[i][1]))
+
+    splitter = splitter_cls(random_seed=13117)
+    indices3 = [(train_indices, test_indices) for train_indices, test_indices in enumerate(splitter.split(X, y))]
+    indices4 = [(train_indices, test_indices) for train_indices, test_indices in enumerate(splitter.split(X, y))]
+    for i in range(len(indices1)):
+        pd.testing.assert_series_equal(pd.Series(indices1[i][0]), pd.Series(indices3[i][0]))
+        pd.testing.assert_series_equal(pd.Series(indices1[i][1]), pd.Series(indices4[i][1]))
