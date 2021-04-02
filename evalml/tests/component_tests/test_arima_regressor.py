@@ -65,7 +65,7 @@ def test_fit_predict_ts_with_y_not_X_index_with_iterable_p_and_q(ts_data):
 
     a_clf = arima.ARIMA(endog=y, exog=X, order=([1, 2], 0, [1, 2]), trend='n', dates=X.index)
     clf = a_clf.fit()
-    y_pred_a = clf.predict(params=(1, 0, 0))
+    y_pred_a = clf.predict()
 
     X_no_ind = X.reset_index(drop=True)
     assert isinstance(y.index, pd.DatetimeIndex)

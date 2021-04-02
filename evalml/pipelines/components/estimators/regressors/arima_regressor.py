@@ -63,38 +63,40 @@ class ARIMARegressor(Estimator):
 
     def _get_dates_fit(self, X, y):
         date_col = None
-
-        if isinstance(y.index, pd.DatetimeIndex):
+        y_index_type = infer_feature_types(pd.Series(y.index)).logical_type.type_string
+        if y_index_type == 'datetime':
             date_col = y.index
         if X is not None:
+            X_index_type = infer_feature_types(pd.Series(X.index)).logical_type.type_string
             if self.date_column in X.columns:
                 date_col = X.pop(self.date_column)
-            elif isinstance(X.index, pd.DatetimeIndex):
+            elif X_index_type == 'datetime':
                 date_col = X.index
 
         if date_col is None:
             msg = "ARIMA regressor requires input data X to have a datetime column specified by the 'date_column' parameter. " \
                   "If not it will look for the datetime column in the index of X or y."
             raise ValueError(msg)
-        return date_col
+        return date_col, X
 
     def _get_dates_predict(self, X, y):
         date_col = None
-
         if y is not None:
-            if isinstance(y.index, pd.DatetimeIndex):
+            y_index_type = infer_feature_types(pd.Series(y.index)).logical_type.type_string
+            if y_index_type == 'datetime':
                 date_col = y.index
         if X is not None:
+            X_index_type = infer_feature_types(pd.Series(X.index)).logical_type.type_string
             if self.date_column in X.columns:
                 date_col = X.pop(self.date_column)
-            elif isinstance(X.index, pd.DatetimeIndex):
+            elif X_index_type == 'datetime':
                 date_col = X.index
 
         if date_col is None:
             msg = "ARIMA regressor requires input data X to have a datetime column specified by the 'date_column' parameter. " \
                   "If not it will look for the datetime column in the index of X or y."
             raise ValueError(msg)
-        return date_col
+        return date_col, X
 
     def _match_indices(self, X, y, date_col):
         if X is not None:
@@ -111,7 +113,9 @@ class ARIMARegressor(Estimator):
         arima = import_or_raise("statsmodels.tsa.arima.model", error_msg=p_error_msg)
 
         X, y = self._manage_woodwork(X, y)
-        dates = self._get_dates_fit(X, y)
+        dates, X = self._get_dates_fit(X, y)
+        dates = pd.to_datetime(dates)
+        dates.freq = pd.infer_freq(dates)
         X, y = self._match_indices(X, y, dates)
         new_params = {}
         for key, val in self.parameters.items():
@@ -127,15 +131,14 @@ class ARIMARegressor(Estimator):
 
     def predict(self, X, y=None):
         X, y = self._manage_woodwork(X, y)
-        dates = self._get_dates_predict(X, y)
+        dates, X = self._get_dates_predict(X, y)
         X, y = self._match_indices(X, y, dates)
-        start = dates.min()
-        end = dates.max()
-        params = self.parameters['order']
+        start = pd.to_datetime(dates).min()
+        end = pd.to_datetime(dates).max()
         if X is not None:
-            y_pred = self._component_obj.predict(params=params, start=start, end=end, exog=X)
+            y_pred = self._component_obj.predict(start=start, end=end, exog=X)
         else:
-            y_pred = self._component_obj.predict(params=params, start=start, end=end)
+            y_pred = self._component_obj.predict(start=start, end=end)
         return infer_feature_types(y_pred)
 
     @property
