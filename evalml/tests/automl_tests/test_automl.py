@@ -2164,20 +2164,20 @@ def test_automl_pipeline_params_simple(mock_fit, mock_score, X_y_binary):
 def test_automl_pipeline_params_multiple(mock_score, mock_fit, X_y_regression):
     mock_score.return_value = {'R2': 1.0}
     X, y = X_y_regression
-    params = {'Imputer': {'numeric_impute_strategy': ['median', 'most_frequent']},
-              'Decision Tree Regressor': {'max_depth': [17, 18, 19], 'max_features': Categorical(['auto'])},
-              'Elastic Net Regressor': {"alpha": Real(0, 0.5), "l1_ratio": (0.01, 0.02, 0.03)}}
+    params = {'Imputer': {'numeric_impute_strategy': Categorical(['median', 'most_frequent'])},
+              'Decision Tree Regressor': {'max_depth': Categorical([17, 18, 19]), 'max_features': Categorical(['auto'])},
+              'Elastic Net Regressor': {"alpha": Real(0, 0.5), "l1_ratio": Categorical((0.01, 0.02, 0.03))}}
     automl = AutoMLSearch(X_train=X, y_train=y, problem_type='regression', pipeline_parameters=params, n_jobs=1)
     automl.search()
     for i, row in automl.rankings.iterrows():
         if 'Imputer' in row['parameters']:
-            assert row['parameters']['Imputer']['numeric_impute_strategy'] == 'median'
+            assert row['parameters']['Imputer']['numeric_impute_strategy'] == Categorical(['median', 'most_frequent']).rvs(random_state=automl.random_seed)
         if 'Decision Tree Regressor' in row['parameters']:
-            assert row['parameters']['Decision Tree Regressor']['max_depth'] == 17
+            assert row['parameters']['Decision Tree Regressor']['max_depth'] == Categorical([17, 18, 19]).rvs(random_state=automl.random_seed)
             assert row['parameters']['Decision Tree Regressor']['max_features'] == 'auto'
         if 'Elastic Net Regressor' in row['parameters']:
             assert 0 < row['parameters']['Elastic Net Regressor']['alpha'] < 0.5
-            assert row['parameters']['Elastic Net Regressor']['l1_ratio'] == 0.01
+            assert row['parameters']['Elastic Net Regressor']['l1_ratio'] == Categorical((0.01, 0.02, 0.03)).rvs(random_state=automl.random_seed)
 
 
 @patch('evalml.pipelines.MulticlassClassificationPipeline.score')
@@ -2449,3 +2449,48 @@ def test_train_batch_returns_trained_pipelines(X_y_binary):
         assert fitted_pipeline.name == original_pipeline.name
         assert fitted_pipeline._is_fitted
         assert fitted_pipeline != original_pipeline
+
+
+def test_high_cv_check_no_warning_for_divide_by_zero(X_y_binary, dummy_binary_pipeline_class):
+    X, y = X_y_binary
+    automl = AutoMLSearch(X_train=X, y_train=y, problem_type="binary")
+    with pytest.warns(None) as warnings:
+        automl._check_for_high_variance(dummy_binary_pipeline_class({}), cv_scores=np.array([0.0]))
+    assert len(warnings) == 0
+
+    with pytest.warns(None) as warnings:
+        # mean is 0 but std is not
+        automl._check_for_high_variance(dummy_binary_pipeline_class({}), cv_scores=np.array([0.0, 1.0, -1.0]))
+    assert len(warnings) == 0
+
+
+@pytest.mark.parametrize("automl_type", [ProblemTypes.BINARY, ProblemTypes.MULTICLASS, ProblemTypes.REGRESSION])
+@patch('evalml.pipelines.RegressionPipeline.score', return_value={"R2": 0.3})
+@patch('evalml.pipelines.ClassificationPipeline.score', return_value={"Log Loss Multiclass": 0.3})
+@patch('evalml.pipelines.BinaryClassificationPipeline.score', return_value={"Log Loss Binary": 0.3})
+@patch('evalml.automl.engine.EngineBase.train_pipeline')
+def test_automl_supports_float_targets_for_classification(mock_train, mock_binary_score, mock_multi_score, mock_regression_score,
+                                                          automl_type, X_y_binary, X_y_multi, X_y_regression,
+                                                          dummy_binary_pipeline_class,
+                                                          dummy_regression_pipeline_class,
+                                                          dummy_multiclass_pipeline_class):
+    if automl_type == ProblemTypes.BINARY:
+        X, y = X_y_binary
+        y = pd.Series(y).map({0: -5.19, 1: 6.7})
+        mock_train.return_value = dummy_binary_pipeline_class({})
+    elif automl_type == ProblemTypes.MULTICLASS:
+        X, y = X_y_multi
+        y = pd.Series(y).map({0: -5.19, 1: 6.7, 2: 2.03})
+        mock_train.return_value = dummy_multiclass_pipeline_class({})
+    elif automl_type == ProblemTypes.REGRESSION:
+        X, y = X_y_regression
+        y = pd.Series(y)
+        mock_train.return_value = dummy_regression_pipeline_class({})
+
+    automl = AutoMLSearch(X_train=X, y_train=y, problem_type=automl_type, random_seed=0, n_jobs=1)
+    automl.search()
+
+    # Assert that we train pipeline on the original target, not the encoded one used in EngineBase for data splitting
+    mock_train_args, _ = mock_train.call_args
+    mock_y = mock_train_args[2]  # args are pipeline, X, y, optimize_thresholds, objective
+    pd.testing.assert_series_equal(mock_y.to_series(), y, check_dtype=False)
