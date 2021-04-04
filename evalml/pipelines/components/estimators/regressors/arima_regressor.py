@@ -38,15 +38,17 @@ class ARIMARegressor(Estimator):
         """
 
         order = (p, d, q)
+        dummy_dates = pd.DatetimeIndex(['2000-01-01', '2000-01-02', '2000-01-03', '2000-01-04'], freq='D', name=date_column)
         parameters = {'order': order,
-                      'trend': trend}
+                      'trend': trend,
+                      'dates': dummy_dates}
 
         parameters.update(kwargs)
-        self.date_column = date_column
 
         p_error_msg = "ARIMA is not installed. Please install using `pip install statsmodels`."
 
         arima = import_or_raise("statsmodels.tsa.arima.model", error_msg=p_error_msg)
+
         try:
             sum_p = sum(p) if isinstance(p, list) else p
             sum_q = sum(q) if isinstance(q, list) else q
@@ -68,8 +70,8 @@ class ARIMARegressor(Estimator):
             date_col = y.index
         if X is not None:
             X_index_type = infer_feature_types(pd.Series(X.index)).logical_type.type_string
-            if self.date_column in X.columns:
-                date_col = X.pop(self.date_column)
+            if self.parameters["dates"].name in X.columns:
+                date_col = X.pop(self.parameters["dates"].name)
             elif X_index_type == 'datetime':
                 date_col = X.index
 
@@ -87,8 +89,8 @@ class ARIMARegressor(Estimator):
                 date_col = y.index
         if X is not None:
             X_index_type = infer_feature_types(pd.Series(X.index)).logical_type.type_string
-            if self.date_column in X.columns:
-                date_col = X.pop(self.date_column)
+            if self.parameters["dates"].name in X.columns:
+                date_col = X.pop(self.parameters["dates"].name)
             elif X_index_type == 'datetime':
                 date_col = X.index
 
@@ -119,7 +121,7 @@ class ARIMARegressor(Estimator):
         X, y = self._match_indices(X, y, dates)
         new_params = {}
         for key, val in self.parameters.items():
-            if key not in ['p', 'd', 'q']:
+            if key not in ['p', 'd', 'q', 'dates']:
                 new_params[key] = val
         if X is not None:
             arima_with_data = arima.ARIMA(endog=y, exog=X, dates=dates, **new_params)
