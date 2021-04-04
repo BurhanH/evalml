@@ -49,7 +49,7 @@ class DateTimeFeaturizer(Transformer):
                           "day_of_week": _extract_day_of_week,
                           "hour": _extract_hour}
 
-    def __init__(self, features_to_extract=None, encode_as_categories=False, random_seed=0, **kwargs):
+    def __init__(self, features_to_extract=None, encode_as_categories=False, date_index=None, random_seed=0, **kwargs):
         """Extracts features from DateTime columns
 
         Arguments:
@@ -65,7 +65,8 @@ class DateTimeFeaturizer(Transformer):
             raise ValueError("{} are not valid options for features_to_extract".format(", ".join([f"'{feature}'" for feature in invalid_features])))
 
         parameters = {"features_to_extract": features_to_extract,
-                      "encode_as_categories": encode_as_categories}
+                      "encode_as_categories": encode_as_categories,
+                      "date_index": date_index}
         parameters.update(kwargs)
 
         self._date_time_col_names = None
@@ -102,7 +103,11 @@ class DateTimeFeaturizer(Transformer):
                 X_t[name] = features
                 if categories:
                     self._categories[name] = categories
+        if self.parameters["date_index"]:
+            date_index_col = X_t[self.parameters["date_index"]]
         X_t = X_t.drop(self._date_time_col_names, axis=1)
+        if self.parameters["date_index"]:
+            X_t[self.parameters["date_index"]] = date_index_col
         return _retain_custom_types_and_initalize_woodwork(X_ww, X_t)
 
     def get_feature_names(self):
