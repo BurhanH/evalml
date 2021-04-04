@@ -118,6 +118,7 @@ class ARIMARegressor(Estimator):
         dates, X = self._get_dates_fit(X, y)
         dates = pd.to_datetime(dates)
         dates.freq = pd.infer_freq(dates)
+        dates = pd.DatetimeIndex(dates, freq=dates.freq)
         X, y = self._match_indices(X, y, dates)
         new_params = {}
         for key, val in self.parameters.items():
