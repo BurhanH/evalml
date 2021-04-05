@@ -85,18 +85,8 @@ class IterativeAlgorithm(AutoMLAlgorithm):
             idx = (self._batch_number - 1) % num_pipeline_classes
             pipeline_class = self._first_batch_results[idx][1]
             for i in range(self.pipelines_per_batch):
-                date_index = None
-                if "DateTime Featurization Component" in self._pipeline_params.keys():
-                    if "date_index" in self._pipeline_params["DateTime Featurization Component"]:
-                        date_index = self._pipeline_params["DateTime Featurization Component"]["date_index"]
                 proposed_parameters = self._tuners[pipeline_class.name].propose()
                 pl_parameters = self._transform_parameters(pipeline_class, proposed_parameters)
-                if "DateTime Featurization Component" in pl_parameters.keys():
-                    if "date_index" not in pl_parameters["DateTime Featurization Component"]:
-                        pl_parameters["DateTime Featurization Component"]["date_index"] = date_index
-                if "ARIMA Regressor" in pl_parameters.keys():
-                    if "date_column" not in pl_parameters["ARIMA Regressor"]:
-                        pl_parameters["ARIMA Regressor"]["date_column"] = date_index
                 next_batch.append(pipeline_class(parameters=pl_parameters, random_seed=self.random_seed))
         self._pipeline_number += len(next_batch)
         self._batch_number += 1

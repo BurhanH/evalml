@@ -38,12 +38,11 @@ class ARIMARegressor(Estimator):
         """
 
         order = (p, d, q)
-        dummy_dates = pd.DatetimeIndex(['2000-01-01', '2000-01-02', '2000-01-03', '2000-01-04'], freq='D', name=date_column)
         parameters = {'order': order,
-                      'trend': trend,
-                      'dates': dummy_dates}
+                      'trend': trend}
 
         parameters.update(kwargs)
+        self.date_column = date_column
 
         p_error_msg = "ARIMA is not installed. Please install using `pip install statsmodels`."
 
@@ -70,8 +69,8 @@ class ARIMARegressor(Estimator):
             date_col = y.index
         if X is not None:
             X_index_type = infer_feature_types(pd.Series(X.index)).logical_type.type_string
-            if self.parameters["dates"].name in X.columns:
-                date_col = X.pop(self.parameters["dates"].name)
+            if self.date_column in X.columns:
+                date_col = X.pop(self.date_column)
             elif X_index_type == 'datetime':
                 date_col = X.index
 
@@ -89,8 +88,8 @@ class ARIMARegressor(Estimator):
                 date_col = y.index
         if X is not None:
             X_index_type = infer_feature_types(pd.Series(X.index)).logical_type.type_string
-            if self.parameters["dates"].name in X.columns:
-                date_col = X.pop(self.parameters["dates"].name)
+            if self.date_column in X.columns:
+                date_col = X.pop(self.date_column)
             elif X_index_type == 'datetime':
                 date_col = X.index
 
@@ -122,7 +121,7 @@ class ARIMARegressor(Estimator):
         X, y = self._match_indices(X, y, dates)
         new_params = {}
         for key, val in self.parameters.items():
-            if key not in ['p', 'd', 'q', 'dates']:
+            if key not in ['p', 'd', 'q']:
                 new_params[key] = val
         if X is not None:
             arima_with_data = arima.ARIMA(endog=y, exog=X, dates=dates, **new_params)

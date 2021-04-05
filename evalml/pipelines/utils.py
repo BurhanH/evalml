@@ -45,7 +45,7 @@ from evalml.utils import get_logger, infer_feature_types
 logger = get_logger(__file__)
 
 
-def _get_preprocessing_components(X, y, problem_type, estimator_class, custom_hyperparameters):
+def _get_preprocessing_components(X, y, problem_type, estimator_class):
     """Given input data, target data and an estimator class, construct a recommended preprocessing chain to be combined with the estimator and trained on the provided data.
 
     Arguments:
@@ -53,8 +53,6 @@ def _get_preprocessing_components(X, y, problem_type, estimator_class, custom_hy
         y (ww.DataColumn): The target data of length [n_samples]
         problem_type (ProblemTypes or str): Problem type
         estimator_class (class): A class which subclasses Estimator estimator for pipeline
-        custom_hyperparameters (dictionary): Dictionary of custom hyperparameters,
-            with component name as key and dictionary of parameters as the value
 
     Returns:
         list[Transformer]: A list of applicable preprocessing components to use with the estimator
@@ -78,11 +76,6 @@ def _get_preprocessing_components(X, y, problem_type, estimator_class, custom_hy
     add_datetime_featurizer = len(datetime_cols.columns) > 0
     if add_datetime_featurizer:
         pp_components.append(DateTimeFeaturizer)
-        try:
-            date_column_specified = custom_hyperparameters["ARIMA Regressor"]["date_column"]
-            custom_hyperparameters['DateTime Featurization Component'] = {"date_index": date_column_specified}
-        except ValueError:
-            pass
 
     if is_time_series(problem_type):
         pp_components.append(DelayedFeatureTransformer)
@@ -93,7 +86,7 @@ def _get_preprocessing_components(X, y, problem_type, estimator_class, custom_hy
 
     if estimator_class.model_family == ModelFamily.LINEAR_MODEL:
         pp_components.append(StandardScaler)
-    return pp_components, custom_hyperparameters
+    return pp_components
 
 
 def _get_pipeline_base_class(problem_type):
@@ -135,7 +128,7 @@ def make_pipeline(X, y, estimator, problem_type, custom_hyperparameters=None):
     problem_type = handle_problem_types(problem_type)
     if estimator not in get_estimators(problem_type):
         raise ValueError(f"{estimator.name} is not a valid estimator for problem type")
-    preprocessing_components, custom_hyperparameters = _get_preprocessing_components(X, y, problem_type, estimator, custom_hyperparameters)
+    preprocessing_components = _get_preprocessing_components(X, y, problem_type, estimator)
 
     complete_component_graph = preprocessing_components + [estimator]
 
