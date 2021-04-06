@@ -660,10 +660,10 @@ def test_data_splitter_gives_pipelines_same_data(mock_fit_binary, mock_score_bin
     # therefore, each pipeline should recieve an identical set of three training-validation splits
     # we'll check the first couple to validate that the data splitter is being used correctly
     for fold_num in range(3):
-        pipeline0_training_X, pipeline0_training_y = mock_fit.call_args_list[fold_num].args
-        pipeline1_training_X, pipeline1_training_y = mock_fit.call_args_list[3 + fold_num].args
-        pipeline0_validation_X, pipeline0_validation_y = mock_score.call_args_list[fold_num].args
-        pipeline1_validation_X, pipeline1_validation_y = mock_score.call_args_list[3 + fold_num].args
+        pipeline0_training_X, pipeline0_training_y = mock_fit.call_args_list[fold_num][0]
+        pipeline1_training_X, pipeline1_training_y = mock_fit.call_args_list[3 + fold_num][0]
+        pipeline0_validation_X, pipeline0_validation_y = mock_score.call_args_list[fold_num][0]
+        pipeline1_validation_X, pipeline1_validation_y = mock_score.call_args_list[3 + fold_num][0]
         assert joblib_hash(pipeline0_training_X.to_dataframe()) == joblib_hash(pipeline1_training_X.to_dataframe())
         assert joblib_hash(pipeline0_training_y.to_series()) == joblib_hash(pipeline1_training_y.to_series())
         assert joblib_hash(pipeline0_validation_X.to_dataframe()) == joblib_hash(pipeline1_validation_X.to_dataframe())
