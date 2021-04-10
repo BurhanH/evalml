@@ -696,7 +696,7 @@ class AutoMLSearch:
         self._results['pipeline_results'][pipeline_id] = {
             "id": pipeline_id,
             "pipeline_name": pipeline.name,
-            "pipeline_class": pipeline,
+            'pipeline': pipeline,
             "pipeline_summary": pipeline.summary(),
             "parameters": pipeline.parameters,
             "score": cv_score,
@@ -754,7 +754,7 @@ class AutoMLSearch:
         pipeline_results = self.results['pipeline_results'].get(pipeline_id)
         if pipeline_results is None:
             raise PipelineNotFoundError("Pipeline not found in automl results")
-        pipeline_class = pipeline_results.get('pipeline_class')
+        pipeline_class = pipeline_results.get('pipeline')
         parameters = pipeline_results.get('parameters')
         if pipeline_class is None or parameters is None:
             raise PipelineNotFoundError("Pipeline class or parameters not found in automl results")

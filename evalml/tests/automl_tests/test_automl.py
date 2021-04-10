@@ -88,12 +88,12 @@ def test_search_results(X_y_regression, X_y_binary, X_y_multi, automl_type, obje
     assert automl.results['search_order'] == [0, 1]
     assert len(automl.results['pipeline_results']) == 2
     for pipeline_id, results in automl.results['pipeline_results'].items():
-        assert results.keys() == {'id', 'pipeline_name', 'pipeline_class', 'pipeline_summary', 'parameters', 'score', 'high_variance_cv', 'training_time',
+        assert results.keys() == {'id', 'pipeline_name', 'pipeline', 'pipeline_summary', 'parameters', 'score', 'high_variance_cv', 'training_time',
                                   'cv_data', 'percent_better_than_baseline_all_objectives',
                                   'percent_better_than_baseline', 'validation_score'}
         assert results['id'] == pipeline_id
         assert isinstance(results['pipeline_name'], str)
-        assert isinstance(results['pipeline_class'], expected_pipeline_class)
+        assert isinstance(results['pipeline'], expected_pipeline_class)
         assert isinstance(results['pipeline_summary'], str)
         assert isinstance(results['parameters'], dict)
         assert isinstance(results['score'], float)
@@ -893,7 +893,7 @@ def test_get_pipeline_invalid(mock_fit, mock_score, X_y_binary):
     automl = AutoMLSearch(X_train=X, y_train=y, problem_type='binary', max_iterations=1)
     automl.search()
     assert automl.get_pipeline(0).name == 'Mode Baseline Binary Classification Pipeline'
-    automl._results['pipeline_results'][0].pop('pipeline_class')
+    automl._results['pipeline_results'][0].pop('pipeline')
     with pytest.raises(PipelineNotFoundError, match="Pipeline class or parameters not found in automl results"):
         automl.get_pipeline(0)
 
@@ -1580,7 +1580,7 @@ def test_early_stopping(caplog, logistic_regression_binary_pipeline_class, X_y_b
     for id in mock_results['search_order']:
         mock_results['pipeline_results'][id] = {}
         mock_results['pipeline_results'][id]['score'] = scores[id]
-        mock_results['pipeline_results'][id]['pipeline_class'] = logistic_regression_binary_pipeline_class
+        mock_results['pipeline_results'][id]['pipeline'] = logistic_regression_binary_pipeline_class
     automl._results = mock_results
 
     assert not automl._should_continue()

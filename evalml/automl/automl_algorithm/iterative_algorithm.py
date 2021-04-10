@@ -62,9 +62,6 @@ class IterativeAlgorithm(AutoMLAlgorithm):
 
         next_batch = []
         if self._batch_number == 0:
-
-            # next_batch = [pipeline_class(parameters=self._transform_parameters(pipeline_class, {}), random_seed=self.random_seed)
-            #               for pipeline_class in self.allowed_pipelines]
             next_batch = [pipeline.new(parameters=self._transform_parameters(pipeline, self._pipeline_params), random_seed=self.random_seed)
                           for pipeline in self.allowed_pipelines]
 
@@ -74,10 +71,10 @@ class IterativeAlgorithm(AutoMLAlgorithm):
               (self._batch_number) % (len(self._first_batch_results) + 1) == 0):
             input_pipelines = []
             for pipeline_dict in self._best_pipeline_info.values():
-                pipeline_class = pipeline_dict['pipeline_class']
+                pipeline = pipeline_dict['pipeline']
                 pipeline_params = pipeline_dict['parameters']
-                input_pipelines.append(pipeline_class.new(parameters=self._transform_parameters(pipeline_class, pipeline_params),
-                                                          random_seed=self.random_seed))
+                input_pipelines.append(pipeline.new(parameters=self._transform_parameters(pipeline, pipeline_params),
+                                                    random_seed=self.random_seed))
             ensemble = _make_stacked_ensemble_pipeline(input_pipelines, input_pipelines[0].problem_type,
                                                        random_seed=self.random_seed,
                                                        n_jobs=self.n_jobs)
@@ -120,7 +117,7 @@ class IterativeAlgorithm(AutoMLAlgorithm):
         current_best_score = self._best_pipeline_info.get(pipeline.model_family, {}).get('score', np.inf)
         if score_to_minimize is not None and score_to_minimize < current_best_score and pipeline.model_family != ModelFamily.ENSEMBLE:
             self._best_pipeline_info.update({pipeline.model_family: {'score': score_to_minimize,
-                                                                     'pipeline_class': pipeline,
+                                                                     'pipeline': pipeline,
                                                                      'parameters': pipeline.parameters,
                                                                      'id': trained_pipeline_results['id']}
                                              })
